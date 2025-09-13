@@ -248,40 +248,22 @@ echo "0" > /dev/bbb_gpio  # Turn LED OFF
 # Test button reading
 cat /dev/bbb_gpio
 ```
-✅ SD card PARTUUID issue tmp fix ✅ :
 
-Perfect! I can see your SD card is already mounted automatically by Ubuntu. The SD card is `/dev/sda` and it's already mounted at:
-
-- Boot partition: `/media/ajianan/boot` 
-- Root partition: `/media/ajianan/root`
-
-## Quick Fix - Edit the Boot Files
+================================================================================================
+✅ SD card PARTUUID issue tmp fix:
 
 ```bash
-# Check what's in the boot partition
 ls -la /media/ajianan/boot/
-
-# Edit uEnv.txt directly
 sudo nano /media/ajianan/boot/uEnv.txt
 ```
-
-**Replace the entire content with:**
 ```bash
 console=ttyS0,115200n8
 bootargs=console=ttyS0,115200n8 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait rw
 ```
-
-## Or if there's an extlinux directory:
-
 ```bash
-# Check for extlinux
 ls -la /media/ajianan/boot/extlinux/
-
-# If it exists, edit it
 sudo nano /media/ajianan/boot/extlinux/extlinux.conf
 ```
-
-**Replace with:**
 ```bash
 DEFAULT Yocto
 TIMEOUT 10
@@ -291,30 +273,18 @@ LABEL Yocto
     FDTDIR ../
     APPEND console=ttyS0,115200n8 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait rw
 ```
-
-## Finalize
-
 ```bash
-# Sync to make sure changes are written
 sudo sync
-
-# Safely unmount
 sudo umount /media/ajianan/boot
 sudo umount /media/ajianan/root
 ```
-
-Now plug the SD card into your BeagleBone and boot - it should work without the PARTUUID error!
-
-This should take literally 30 seconds to fix. 🚀
-
 ================================================================================================     
-
-## To flash the image on to sd card using wic file 
+✅ To flash the image on to sd card using wic file 
 
 # Find the new image
-find tmp/deploy/images/beaglebone/ -name "custom-image*.wic"
+find tmp/deploy-ti/images/beaglebone/ -name "custom-image*.wic"
 
 # Flash it (replace /dev/sdX with your SD card)
-sudo dd if=tmp/deploy/images/beaglebone/custom-image-beaglebone.wic of=/dev/sdX bs=4M
+sudo dd if=tmp/deploy-ti/images/beaglebone/custom-image-beaglebone.wic of=/dev/sdX bs=4M
 
 =================================================================================================
