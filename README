@@ -39,3 +39,133 @@ II. Misc
 ========
 
 --- replace with specific information about the meta-mybeagle layer ---
+
+folder tree:
+meta-mybeagle/
+├── conf/
+│   └── layer.conf                    # Layer configuration
+├── recipes-core/
+│   └── images/
+│       └── custom-image.bb           # my custom image recipe
+├── recipes-kernel/
+│   └── linux/
+│       └── linux-%.bbappend         # Kernel modifications
+├── recipes-bsp/
+│   └── bootloader/
+└── recipes-connectivity/
+    └── my-apps/
+
+poky/
+├── meta/                            # Core OpenEmbedded recipes
+├── meta-poky/                       # Poky distribution config
+├── meta-yocto-bsp/                  # Board Support Packages
+└── bitbake/                         # Build tool
+
+build/
+├── conf/
+│   ├── local.conf                   # Build configuration (YOU modify)
+│   ├── bblayers.conf                # Layer configuration (YOU modify)
+│   └── templateconf.cfg
+
+2. Key Configuration Files Breakdown
+local.conf (Your Build Configuration)
+
+Source: Template from Poky, but YOU customize it
+Purpose: Machine target, package management, build options
+Key settings you likely modified:
+
+bashMACHINE = "beaglebone-yocto"
+DISTRO = "poky"
+EXTRA_IMAGE_FEATURES += "debug-tweaks"
+CORE_IMAGE_EXTRA_INSTALL += "openssh"
+bblayers.conf (Layer Stack Configuration)
+
+Source: Template from Poky, but YOU add your layers
+Purpose: Tells BitBake which layers to include
+Your additions:
+
+bashBBLAYERS ?= " \
+  /path/to/poky/meta \
+  /path/to/poky/meta-poky \
+  /path/to/poky/meta-yocto-bsp \
+  /path/to/meta-yourlayer \
+"
+Your Custom Image Recipe (your-custom-image.bb)
+
+Source: YOUR custom layer
+Inherits from: core-image-minimal (from Poky)
+Your customizations:
+
+pythoninherit core-image
+
+# Root password and auto-resize
+EXTRA_IMAGE_FEATURES += "debug-tweaks"
+IMAGE_INSTALL_append = " resize-helper"
+
+# Additional packages
+IMAGE_INSTALL += " \
+    openssh \
+    nano \
+    your-gpio-driver \
+"
+
+# Rootfs size
+IMAGE_ROOTFS_EXTRA_SPACE = "2048000"
+
+3. Yocto Build Workflow
+Phase 1: Configuration Resolution
+mermaidgraph TD
+    A[bitbake your-image] --> B[Read bblayers.conf]
+    B --> C[Load all layers]
+    C --> D[Read local.conf]
+    D --> E[Parse all .bb/.bbappend files]
+    E --> F[Create dependency graph]
+Phase 2: Recipe Resolution Priority
+
+Your Layer (highest priority if BBFILE_PRIORITY set high)
+Board-specific layer (meta-yocto-bsp)
+Distribution layer (meta-poky)
+Core layer (meta)
+
+Phase 3: Build Execution
+1. Fetch sources (do_fetch)
+2. Unpack sources (do_unpack)  
+3. Patch sources (do_patch)
+4. Configure build (do_configure)
+5. Compile code (do_compile)
+6. Install to staging (do_install)
+7. Package creation (do_package)
+8. Rootfs assembly (do_rootfs)
+9. Image creation (do_image)
+
+4. How Your Custom Layer Overrides Work
+File Priority System:
+
+Layer Priority: Set in your layer.conf
+
+pythonBBFILE_PRIORITY_yourlayer = "10"  # Higher = more priority
+
+Recipe Versioning: Higher version wins
+
+python# In your layer
+PV = "1.0"
+PR = "r1"
+
+BBAPPEND Files: Always applied on top of base recipes
+
+python# In your linux-%.bbappend
+SRC_URI += "file://your-custom.patch"
+KERNEL_MODULE_AUTOLOAD += "your_gpio_driver"
+
+5. Build Process Flow
+When you run bitbake your-custom-image:
+
+BitBake reads bblayers.conf → Knows about your layer
+Parses your image recipe → Sees inherit core-image-minimal
+Pulls base recipe from meta/recipes-core/images/core-image-minimal.bb
+Applies your modifications (password, resize, packages)
+Resolves dependencies for all packages
+Builds kernel with your .bbappend modifications
+Includes your GPIO driver if specified in IMAGE_INSTALL
+Creates rootfs with all components
+Generates final image (.wic file)
