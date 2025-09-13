@@ -5,7 +5,6 @@ require recipes-core/images/core-image-minimal.bb
 
 IMAGE_INSTALL += " \
     vim \
-    kernel-module-gpio \
 "
 
 IMAGE_LINGUAS = " "
